@@ -5,10 +5,11 @@
         <h4>Range: {{ range }}</h4>
       </v-col>
       <v-col cols="3" class="d-flex justify-center">
-        <h4>Score: 0</h4>
+        <h4>Score: {{ score }}</h4>
       </v-col>
-      <v-col cols="3" class="d-flex justify-center">
-        <h4>Moves: 1</h4>
+      <v-col cols="3" class="d-flex justify-center flex-column">
+        <h4>Current Moves: {{ currentRoundMoves }}</h4>
+        <h4>Total Moves: {{ totalMoves }}</h4>
       </v-col>
     </v-row>
     <v-row class="h-screen">
@@ -72,7 +73,10 @@
   const moveCounter = ref(0)
 
   // Player Stats
-  const range = ref(3)
+  const range = ref(1)
+  const score = ref(0)
+  const totalMoves = ref(0)
+  const currentRoundMoves = ref(0)
 
   // Current cell and target cell
   const currentCell = ref<Cell>({
@@ -90,7 +94,7 @@
     color: ''
   })
 
-  // Init
+  // Init & Reset
   const generateBoard = () => {
     // Create a board of size boardSize x boardSize where all cells have values equal to their index
     for (let i = 0; i < boardSize.value; i++) {
@@ -109,13 +113,30 @@
   }
 
   generateBoard()
+
+  const resetBoard = () => {
+    targetCell.value.row = Math.floor(Math.random() * boardSize.value)
+    targetCell.value.col = Math.floor(Math.random() * boardSize.value)
+    moveCounter.value = 0
+    currentRoundMoves.value = 0
+
+    setTimeout(() => {
+      generateBoard()
+    }, 1500);
+  }
+
+  const win = () => {
+    board.value[targetCell.value.row][targetCell.value.col].color = 'green'
+    score.value += 1
+    setSnackbar('success', 'You hit the battleship!')
+    resetBoard()
+  }
   
 
   const handleClick = (cell: Cell) => {
     // If you click on the target you win
     if (cell.row === targetCell.value.row && cell.col === targetCell.value.col) {
-      board.value[targetCell.value.row][targetCell.value.col].color = 'green'
-      setSnackbar('success', 'You hit the battleship!')
+      win()
     }
     // If the cell is already red, return
     if (cell.color === 'red') {
@@ -134,6 +155,8 @@
 
   const handleKeydown = (event: KeyboardEvent) => {
     if (moveCounter.value === 1) {
+      totalMoves.value++
+      currentRoundMoves.value++
       if (event.key === 'w') {
         // Check if it is possible to go up one cell and if it is call handleclick with that cell
         if (currentCell.value.row !== 0) {
@@ -144,7 +167,7 @@
         }
       } else if (event.key === 's') {
         // Check if it is possible to go up one cell and if it is call handleclick with that cell
-        if (currentCell.value.row !== boardSize.value) {
+        if (currentCell.value.row !== boardSize.value - 1) {
           const newCell = board.value[currentCell.value.row + 1][currentCell.value.col]
           handleClick(newCell)
         } else {
@@ -160,7 +183,7 @@
         }
       } else if (event.key === 'd') {
         // Check if it is possible to go up one cell and if it is call handleclick with that cell
-        if (currentCell.value.col !== boardSize.value) {
+        if (currentCell.value.col !== boardSize.value - 1) {
           const newCell = board.value[currentCell.value.row][currentCell.value.col + 1]
           handleClick(newCell)
         } else {
@@ -175,8 +198,7 @@
         for (let i = currentCell.value.row - 1; i >= currentCell.value.row - range.value; i--) {
           // If the target cell is in the way then do not change any tiles above the target cell
           if (i === targetCell.value.row && targetCell.value.col === currentCell.value.col) {
-            board.value[i][currentCell.value.col].color = 'green'
-            setSnackbar('success', 'You hit the battleship!')
+            win()
             break
           } else {
             // Change the colors of the tiles in sequence one after the other so it looks animated
@@ -189,8 +211,7 @@
         event.preventDefault()
         for (let i = currentCell.value.row + 1; i <= currentCell.value.row + range.value; i++) {
           if (i === targetCell.value.row && targetCell.value.col === currentCell.value.col) {
-            board.value[i][currentCell.value.col].color = 'green'
-            setSnackbar('success', 'You hit the battleship!')
+            win()
             break
           } else {
             setTimeout(() => {
@@ -201,8 +222,7 @@
       } else if (event.key === 'a') {
         for (let i = currentCell.value.col - 1; i >= currentCell.value.col - range.value; i--) {
           if (i === targetCell.value.col && targetCell.value.row === currentCell.value.row) {
-            board.value[currentCell.value.row][i].color = 'green'
-            setSnackbar('success', 'You hit the battleship!')
+            win()
             break
           } else {
             setTimeout(() => {
@@ -213,8 +233,7 @@
       } else if (event.key === 'd') {
         for (let i = currentCell.value.col + 1; i <= currentCell.value.col + range.value; i++) {
           if (i === targetCell.value.col && targetCell.value.row === currentCell.value.row) {
-            board.value[currentCell.value.row][i].color = 'green'
-            setSnackbar('success', 'You hit the battleship!')
+            win()
             break
           } else {
             setTimeout(() => {
